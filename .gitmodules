@@ -1,3 +1,6 @@
 [submodule "dep/arduino-cmake-ng"]
 	path = dep/arduino-cmake-ng
 	url = https://github.com/arduino-cmake/Arduino-CMake-NG.git
+[submodule "dep/bundle"]
+	path = dep/bundle
+	url = https://github.com/keyboardio/Kaleidoscope-Bundle-Keyboardio.git
