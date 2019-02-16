@@ -1,0 +1,3 @@
+[submodule "dep/arduino-cmake-ng"]
+	path = dep/arduino-cmake-ng
+	url = https://github.com/arduino-cmake/Arduino-CMake-NG.git
