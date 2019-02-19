@@ -4,3 +4,6 @@
 [submodule "dep/bundle"]
 	path = dep/bundle
 	url = https://github.com/keyboardio/Kaleidoscope-Bundle-Keyboardio.git
+[submodule "dep/googletest"]
+	path = dep/googletest
+	url = https://github.com/google/googletest.git
