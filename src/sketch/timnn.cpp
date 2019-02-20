@@ -2,6 +2,7 @@
 #include <Kaleidoscope-HostPowerManagement.h>
 #include <Kaleidoscope-LEDControl.h>
 #include <Kaleidoscope-LEDEffect-SolidColor.h>
+#include <TapMod.h>
 
 enum { DVORAK, SPECIAL };
 
@@ -16,8 +17,8 @@ KEYMAPS(
         Key_Tab,   Key_A,         Key_O,     Key_E,      Key_U,     Key_I,
         Key_NoKey, Key_Semicolon, Key_Q,     Key_J,      Key_K,     Key_X,     Key_NoKey,
 
-        Key_NoKey, Key_LeftShift, Key_Backspace, Key_NoKey,
-        Key_LeftShift,
+        Key_NoKey, Key_TapMod01, Key_Backspace, Key_NoKey,
+        Key_TapMod02,
         // Key_NoKey, OSM(LeftShift), Key_Backspace, Key_NoKey,
         // OSM(LeftShift),
 
@@ -26,8 +27,8 @@ KEYMAPS(
         Key_D,     Key_H,     Key_T,     Key_N,     Key_S,     Key_Enter,
         Key_NoKey, Key_B,     Key_M,     Key_W,     Key_V,     Key_Z,     Key_NoKey,
 
-        Key_NoKey, ShiftToLayer(SPECIAL), Key_Spacebar, Key_NoKey,
-        ShiftToLayer(SPECIAL)
+        Key_NoKey, Key_TapMod03, Key_Spacebar, Key_NoKey,
+        Key_TapMod04
         // Key_NoKey, OSL(SPECIAL), Key_Spacebar, Key_NoKey,
         // OSL(SPECIAL)
 ),
@@ -72,14 +73,20 @@ void hostPowerManagementEventHandler(kaleidoscope::plugin::HostPowerManagement::
 
 
 KALEIDOSCOPE_INIT_PLUGINS(
-        LEDControl, HostPowerManagement, LEDOff, ledSolid);
+    TapMod,
+    LEDControl, HostPowerManagement, LEDOff, ledSolid)
 
 void setup() {
-    Kaleidoscope.setup();
+  custom::TapMod::setActual(0, Key_LeftShift);
+  custom::TapMod::setActual(1, Key_LeftShift);
+  custom::TapMod::setActual(2, ShiftToLayer(SPECIAL));
+  custom::TapMod::setActual(3, ShiftToLayer(SPECIAL));
 
-    // ledSolid.activate();
+  Kaleidoscope.setup();
+
+  // ledSolid.activate();
 }
 
 void loop() {
-    Kaleidoscope.loop();
+  Kaleidoscope.loop();
 }
