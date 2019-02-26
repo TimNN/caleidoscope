@@ -55,7 +55,7 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
     return EventHandlerResult::EVENT_CONSUMED;
   }
 
-  if (real_key_waiters != 0 && keyToggledOn(keyState) && !false /* should_ignore_key */) {
+  if (real_key_waiters != 0 && keyToggledOn(keyState) && !shouldSkipKey(mappedKey)) {
       // TODO: switch states
   }
 
@@ -73,6 +73,10 @@ EventHandlerResult TapMod::beforeReportingState() {
 
 bool TapMod::isTapModKey(Key key) {
   return (Key_TapMod01 <= key && key <= Key_TapMod04);
+}
+
+bool TapMod::shouldSkipKey(Key _key) {
+  return false;
 }
 
 uint8_t TapMod::find_last_queue_state(Key key, uint8_t pos_addr) {

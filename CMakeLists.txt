@@ -12,16 +12,19 @@ if(NOT CALEIDOSCOPE_HOST)
     set(ARDUINO_CMAKE_PLATFORM_VARIANTS_PATH dep/bundle/avr/variants)
     # Make some later conditions nicer.
     set(CALEIDOSCOPE_ARDUINO 1)
+    # dep/bundle/avr/platform.txt uses these, so let's match that...
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_C_STANDARD 11)
 else()
     # Build with debug symbols by default.
     set(default_build_type "Debug")
+    # ...but allow more modern features in tests
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_C_STANDARD 17)
 endif()
 
 project(caleidoscope)
 
-# dep/bundle/avr/platform.txt uses these, so let's match that.
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_C_STANDARD 11)
 
 # Set up some global defines. [CUSTOMIZE]
 add_definitions('-DUSB_VID=0x1209')
@@ -112,8 +115,8 @@ if(CALEIDOSCOPE_ARDUINO)
 endif()
 
 function(define_test TEST_BASE_NAME)
-    add_executable(${TEST_BASE_NAME} tests/main.cpp "tests/${TEST_BASE_NAME}.cpp" ${my_plugin_SOURCES})
-    target_include_directories(${TEST_BASE_NAME} PRIVATE ${my_plugin_INCLUDE_DIRS} ${virtual_INCLUDE_DIRS})
+    add_executable(${TEST_BASE_NAME} tests/main.cpp tests/FakeKeyboardBaseTest.cpp "tests/${TEST_BASE_NAME}.cpp" ${my_plugin_SOURCES})
+    target_include_directories(${TEST_BASE_NAME} PRIVATE tests ${my_plugin_INCLUDE_DIRS} ${virtual_INCLUDE_DIRS})
     target_link_libraries(${TEST_BASE_NAME} gtest_main)
     add_test(NAME ${TEST_BASE_NAME} COMMAND ${TEST_BASE_NAME})
 endfunction()

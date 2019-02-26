@@ -4,10 +4,10 @@
 #include <Kaleidoscope-Ranges.h>
 #include <kaleidoscope/key_defs.h>
 
-const Key Key_TapMod01 = Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 1);
-const Key Key_TapMod02 = Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 2);
-const Key Key_TapMod03 = Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 3);
-const Key Key_TapMod04 = Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 4);
+#define Key_TapMod01 Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 1)
+#define Key_TapMod02 Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 2)
+#define Key_TapMod03 Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 3)
+#define Key_TapMod04 Key(kaleidoscope::ranges::KALEIDOSCOPE_SAFE_START + 4)
 
 namespace custom {
 
@@ -59,6 +59,9 @@ class TapMod : public Plugin {
     static const size_t QUEUE_MAX = 16;
     static const size_t ENTRY_CNT = 4;
 
+    static const ts_millis_t TAP_TIME_MS = 180;
+    static const ts_millis_t ACTIVE_TIME_MAX_MS = 320;
+
     static Entry entries[ENTRY_CNT];
 
     static QueueItem queue[QUEUE_MAX];
@@ -70,6 +73,8 @@ class TapMod : public Plugin {
 
 
     static bool isTapModKey(Key key);
+
+    static bool shouldSkipKey(Key key);
 
     static uint8_t find_last_queue_state(Key key, uint8_t pos_addr);
 
