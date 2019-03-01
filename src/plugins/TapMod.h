@@ -21,6 +21,7 @@ class TapMod : public Plugin {
   public:
     static void setActual(size_t idx, Key actual);
 
+    EventHandlerResult beforeEachCycle();
     EventHandlerResult onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
     EventHandlerResult beforeReportingState();
 
@@ -68,7 +69,7 @@ class TapMod : public Plugin {
     static size_t queue_head;
     static size_t queue_len;
 
-    static uint8_t real_key_waiters;
+    static uint8_t waiting;
     static uint8_t queuing_entries;
 
 

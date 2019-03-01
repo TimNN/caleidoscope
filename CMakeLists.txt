@@ -17,10 +17,12 @@ if(NOT CALEIDOSCOPE_HOST)
     set(CMAKE_C_STANDARD 11)
 else()
     # Build with debug symbols by default.
-    set(default_build_type "Debug")
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Debug CACHE STRING "See CMake docs." FORCE)
+    endif()
     # ...but allow more modern features in tests
     set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_C_STANDARD 17)
+    set(CMAKE_C_STANDARD 11)
 endif()
 
 project(caleidoscope)

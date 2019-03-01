@@ -14,6 +14,8 @@ using namespace kaleidoscope;
 typedef unsigned long ts_millis_t;
 
 typedef EventHandlerResult (*PluginOnKeyswitch)(Key& mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
+typedef EventHandlerResult (*PluginBeforeReporting)();
+typedef EventHandlerResult (*PluginBeforeCycle)();
 
 typedef std::pair<uint8_t, uint8_t> RCPair;
 
@@ -50,10 +52,14 @@ class FakeKeyboardBaseTest : public ::testing::Test {
     void SetUp() override;
 
     static void add_keyswitch_handler(PluginOnKeyswitch handler);
+    static void add_before_reporting_handler(PluginBeforeReporting handler);
+    static void add_before_cycle_handler(PluginBeforeCycle handler);
 
-    static void cycle(std::initializer_list<FakeKeyEvent> events, ts_millis_t total_millis = 10);
+    static void cycle(std::initializer_list<FakeKeyEvent> events, ts_millis_t total_millis = 20);
 
     static void verify(std::initializer_list<FakeKeyEventResultExpectation> expectations);
+
+    static void inc_millis(ts_millis_t amount);
 
     /// Down
     static FakeKeyEvent D(PosKey key) {
@@ -70,11 +76,30 @@ class FakeKeyboardBaseTest : public ::testing::Test {
       return FakeKeyEvent { key.key, key.row, key.col, WAS_PRESSED };
     }
 
+    /// Expect Down
     static FakeKeyEventResultExpectation ED(Key key) {
       return FakeKeyEventResultExpectation {
         EventHandlerResult::OK, key, std::nullopt, IS_PRESSED, std::nullopt
       };
     }
+
+    /// Expect Hold
+    static FakeKeyEventResultExpectation EH(Key key) {
+      return FakeKeyEventResultExpectation {
+        EventHandlerResult::OK, key, std::nullopt, IS_PRESSED | WAS_PRESSED, std::nullopt
+      };
+    }
+
+    /// Expect Up
+    static FakeKeyEventResultExpectation EU(Key key) {
+      return FakeKeyEventResultExpectation {
+        EventHandlerResult::OK, key, std::nullopt, WAS_PRESSED, std::nullopt
+      };
+    }
+
+    static constexpr FakeKeyEventResultExpectation Consumed = FakeKeyEventResultExpectation {
+      EventHandlerResult::EVENT_CONSUMED, std::nullopt, std::nullopt, std::nullopt, std::nullopt
+    };
 
   private:
     const static ts_millis_t INITIAL_MILLIS = 100;
@@ -82,11 +107,26 @@ class FakeKeyboardBaseTest : public ::testing::Test {
     static ts_millis_t current_millis;
     static std::vector<FakeKeyEventResult> key_events;
     static std::vector<PluginOnKeyswitch> on_keyswitch_handlers;
+    static std::vector<PluginBeforeReporting> before_reporting_handlers;
+    static std::vector<PluginBeforeCycle> before_cycle_handlers;
 
     static void handle_keyswitch_internal(Key mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
+    static void before_reporting_internal();
+    static void before_cycle_internal();
 
     friend ts_millis_t millis_internal();
     friend void handleKeyswitchEvent(Key mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
+
+    static std::string mys(EventHandlerResult e) {
+      switch (e) {
+        case EventHandlerResult::OK:
+          return "OK";
+        case EventHandlerResult::EVENT_CONSUMED:
+          return "EVENT_CONSUMED";
+        case EventHandlerResult::ERROR:
+          return "ERROR";
+      }
+    }
 };
 
 
