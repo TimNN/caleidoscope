@@ -44,9 +44,13 @@ void FakeKeyboardBaseTest::cycle(std::initializer_list<FakeKeyEvent> events, ts_
   current_millis += inc;
   before_reporting_internal();
   current_millis += inc;
+  send_report_internal();
 }
 
-void FakeKeyboardBaseTest::verify(std::initializer_list<FakeKeyEventResultExpectation> expectations) {
+void FakeKeyboardBaseTest::verify(std::initializer_list<FakeKeyEventResultExpectation> raw_expectations) {
+  std::vector<FakeKeyEventResultExpectation> expectations(raw_expectations);
+  expectations.push_back(ReportSent);
+
   ASSERT_EQ(key_events.size(), expectations.size());
 
   auto ev = key_events.begin();
@@ -83,7 +87,7 @@ void FakeKeyboardBaseTest::handle_keyswitch_internal(Key mappedKey, uint8_t row,
         << "Invalid event handler result: " << mys(result);
   }
 
-  key_events.push_back(FakeKeyEventResult { orig, mappedKey, result });
+  key_events.push_back(FakeKeyEventResult { orig, mappedKey, result, false });
 }
 
 void FakeKeyboardBaseTest::before_reporting_internal() {
@@ -102,6 +106,12 @@ void FakeKeyboardBaseTest::before_cycle_internal() {
   }
 }
 
+void FakeKeyboardBaseTest::send_report_internal() {
+  FakeKeyEventResult expect = {};
+  expect.is_send_report_marker = true;
+  key_events.push_back(expect);
+}
+
 extern "C" {
   ts_millis_t millis() {
     return millis_internal();
@@ -110,4 +120,12 @@ extern "C" {
 
 void handleKeyswitchEvent(Key mappedKey, uint8_t row, uint8_t col, uint8_t keyState) {
   FakeKeyboardBaseTest::handle_keyswitch_internal(mappedKey, row, col, keyState);
+}
+
+namespace kaleidoscope::hid {
+
+void sendKeyboardReport() {
+  FakeKeyboardBaseTest::send_report_internal();
+}
+
 }

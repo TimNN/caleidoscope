@@ -7,6 +7,8 @@
 // Need a named namespace for friendliness.
 namespace custom {
 
+using State = TapMod::State;
+
 // Test base class with most function definitions.
 class TapModTest : public FakeKeyboardBaseTest {
   private:
@@ -40,7 +42,8 @@ class TapModTest : public FakeKeyboardBaseTest {
     }
 
   protected:
-    static const PosKey tm1;
+    static constexpr PosKey tm1 = PosKey { Key_TapMod01, 1, 1 };
+    static constexpr PosKey kn1 = PosKey { Key_C, 2, 1 };
 
     static void verify_state(TapMod::State s0, TapMod::State s3) {
       ASSERT_EQ(TapMod::entries[0].state, s0);
@@ -48,13 +51,11 @@ class TapModTest : public FakeKeyboardBaseTest {
     }
 };
 
-const PosKey TapModTest::tm1 = PosKey { Key_TapMod01, 1, 1 };
-
 TEST_F(TapModTest, tmKeyDown_actualKeyDown) {
-  verify_state(TapMod::IDLE, TapMod::IDLE);
+  verify_state(State::IDLE, State::IDLE);
   cycle({D(tm1)});
   verify({ED(Key_E)});
-  verify_state(TapMod::PRESSED_IDLE, TapMod::IDLE);
+  verify_state(State::PRESSED_IDLE, State::IDLE);
 }
 
 TEST_F(TapModTest, tmKeyHeld_actualKeyHeld) {
@@ -62,7 +63,7 @@ TEST_F(TapModTest, tmKeyHeld_actualKeyHeld) {
   verify({ED(Key_E)});
   cycle({H(tm1)});
   verify({EH(Key_E)});
-  verify_state(TapMod::PRESSED_IDLE, TapMod::IDLE);
+  verify_state(State::PRESSED_IDLE, State::IDLE);
 }
 
 TEST_F(TapModTest, tmKeyReleasedShort_statePressedDelayed) {
@@ -70,7 +71,7 @@ TEST_F(TapModTest, tmKeyReleasedShort_statePressedDelayed) {
   verify({ED(Key_E)});
   cycle({U(tm1)});
   verify({Consumed, EH(Key_E)});
-  verify_state(TapMod::PRESSED_DELAYED, TapMod::IDLE);
+  verify_state(State::PRESSED_DELAYED, State::IDLE);
 }
 
 TEST_F(TapModTest, pressedDelayed_keyHeldUntilTimeout) {
@@ -83,8 +84,18 @@ TEST_F(TapModTest, pressedDelayed_keyHeldUntilTimeout) {
   inc_millis(300);
   cycle({});
   verify({EU(Key_E)});
-  verify_state(TapMod::IDLE, TapMod::IDLE);
+  verify_state(State::IDLE, State::IDLE);
+}
 
+TEST_F(TapModTest, pressedDelayed_accectsNextReal) {
+  cycle({D(tm1)});
+  verify({ED(Key_E)});
+  cycle({U(tm1)});
+  verify({Consumed, EH(Key_E)});
+  cycle({D(kn1)});
+  verify_state(State::IDLE, State::IDLE);
+  cycle({U(kn1)});
+  verify({ED(Key_C), EH(Key_E), ReportSent, EU(Key_E), ReportSent, EU(Key_C)});
 }
 
 TEST_F(TapModTest, tmKeyHeldLong_statePressedReal) {
@@ -93,7 +104,7 @@ TEST_F(TapModTest, tmKeyHeldLong_statePressedReal) {
   inc_millis(200);
   cycle({H(tm1)});
   verify({EH(Key_E)});
-  verify_state(TapMod::PRESSED_REAL, TapMod::IDLE);
+  verify_state(State::PRESSED_REAL, State::IDLE);
 }
 
 TEST_F(TapModTest, pressedReal_keyHeldUntilReleased) {
@@ -106,7 +117,7 @@ TEST_F(TapModTest, pressedReal_keyHeldUntilReleased) {
   verify({EH(Key_E)});
   cycle({U(tm1)});
   verify({EU(Key_E)});
-  verify_state(TapMod::IDLE, TapMod::IDLE);
+  verify_state(State::IDLE, State::IDLE);
 }
 
 }

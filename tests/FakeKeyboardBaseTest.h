@@ -2,8 +2,9 @@
 
 #include <gtest/gtest.h>
 #include <initializer_list>
-#include <kaleidoscope/key_defs.h>
 #include <kaleidoscope/event_handler_result.h>
+#include <kaleidoscope/hid.h>
+#include <kaleidoscope/key_defs.h>
 #include <kaleidoscope/keyswitch_state.h>
 #include <optional>
 #include <utility>
@@ -30,6 +31,7 @@ struct FakeKeyEventResult {
   FakeKeyEvent oev;
   Key mappedKey;
   EventHandlerResult result;
+  bool is_send_report_marker;
 };
 
 struct PosKey {
@@ -44,6 +46,7 @@ struct FakeKeyEventResultExpectation {
   std::optional<Key> originalKey;
   std::optional<uint8_t> keyState;
   std::optional<RCPair> pos;
+  bool is_send_report_marker;
 };
 
 class FakeKeyboardBaseTest : public ::testing::Test {
@@ -79,26 +82,30 @@ class FakeKeyboardBaseTest : public ::testing::Test {
     /// Expect Down
     static FakeKeyEventResultExpectation ED(Key key) {
       return FakeKeyEventResultExpectation {
-        EventHandlerResult::OK, key, std::nullopt, IS_PRESSED, std::nullopt
+        EventHandlerResult::OK, key, std::nullopt, IS_PRESSED, std::nullopt, false
       };
     }
 
     /// Expect Hold
     static FakeKeyEventResultExpectation EH(Key key) {
       return FakeKeyEventResultExpectation {
-        EventHandlerResult::OK, key, std::nullopt, IS_PRESSED | WAS_PRESSED, std::nullopt
+        EventHandlerResult::OK, key, std::nullopt, IS_PRESSED | WAS_PRESSED, std::nullopt, false
       };
     }
 
     /// Expect Up
     static FakeKeyEventResultExpectation EU(Key key) {
       return FakeKeyEventResultExpectation {
-        EventHandlerResult::OK, key, std::nullopt, WAS_PRESSED, std::nullopt
+        EventHandlerResult::OK, key, std::nullopt, WAS_PRESSED, std::nullopt, false
       };
     }
 
     static constexpr FakeKeyEventResultExpectation Consumed = FakeKeyEventResultExpectation {
-      EventHandlerResult::EVENT_CONSUMED, std::nullopt, std::nullopt, std::nullopt, std::nullopt
+      EventHandlerResult::EVENT_CONSUMED, std::nullopt, std::nullopt, std::nullopt, std::nullopt, false
+    };
+
+    static constexpr FakeKeyEventResultExpectation ReportSent = FakeKeyEventResultExpectation {
+      EventHandlerResult::OK, std::nullopt, std::nullopt, std::nullopt, std::nullopt, false
     };
 
   private:
@@ -114,8 +121,11 @@ class FakeKeyboardBaseTest : public ::testing::Test {
     static void before_reporting_internal();
     static void before_cycle_internal();
 
+    static void send_report_internal();
+
     friend ts_millis_t millis_internal();
     friend void handleKeyswitchEvent(Key mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
+    friend void kaleidoscope::hid::sendKeyboardReport();
 
     static std::string mys(EventHandlerResult e) {
       switch (e) {

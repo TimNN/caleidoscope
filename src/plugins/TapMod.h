@@ -25,21 +25,19 @@ class TapMod : public Plugin {
     EventHandlerResult onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
     EventHandlerResult beforeReportingState();
 
-    enum State : uint8_t {
-      /** Inactive, waiting for press. */
-          IDLE = 0,
-      /** Actual key pressed, waiting for key release or timeout. */
-          PRESSED_IDLE,
-      /** Key tapped (already released), but no actual key pressed yet. */
-          PRESSED_DELAYED,
-      /** Key was really pressed (longer than tap timeout). */
-          PRESSED_REAL,
-      /** Key should be released in the next cycle. */
-          RELEASE_NEXT_01,
-      /** Key should be released in this cycle. */
-          RELEASE_NEXT_00,
-      /** Key presses are being queued for later. */
-          QUEUING,
+    enum class State : uint8_t {
+      /// Inactive, waiting for press.
+      IDLE = 0,
+      /// Actual key pressed, waiting for key release or timeout.
+      PRESSED_IDLE,
+      /// Key tapped (already released), but no actual key pressed yet.
+      PRESSED_DELAYED,
+      /// Key was really pressed (longer than tap timeout).
+      PRESSED_REAL,
+      /// Key should be released in this cycle.
+      RELEASE_THIS_CYCLE,
+      /// Key presses are being queued for later.
+      QUEUING,
     };
 
     struct Entry {
@@ -69,7 +67,13 @@ class TapMod : public Plugin {
     static size_t queue_head;
     static size_t queue_len;
 
+    static boolean real_key_down_this_cycle;
+    /// Listening for a real key down.
+    static uint8_t listening;
+    /// Waiting for a timeout.
     static uint8_t waiting;
+    /// Injecting keys.
+    static uint8_t injecting;
     static uint8_t queuing_entries;
 
 
