@@ -30,6 +30,8 @@ class TapMod : public Plugin {
       IDLE = 0,
       /// Actual key pressed, waiting for key release or timeout.
       PRESSED_IDLE,
+      /// Actual key, followed by one real key pressed, waiting for key release or timeout.
+      PRESSED_PRE_QUEUE,
       /// Key tapped (already released), but no actual key pressed yet.
       PRESSED_DELAYED,
       /// Key was really pressed (longer than tap timeout).
@@ -69,12 +71,12 @@ class TapMod : public Plugin {
 
     static boolean real_key_down_this_cycle;
     /// Listening for a real key down.
-    static uint8_t listening;
+    static bool listening;
     /// Waiting for a timeout.
-    static uint8_t waiting;
+    static bool waiting;
     /// Injecting keys.
-    static uint8_t injecting;
-    static uint8_t queuing_entries;
+    static bool injecting;
+    static uint8_t queuing;
 
 
     static bool isTapModKey(Key key);

@@ -120,4 +120,49 @@ TEST_F(TapModTest, pressedReal_keyHeldUntilReleased) {
   verify_state(State::IDLE, State::IDLE);
 }
 
+TEST_F(TapModTest, tmKeyReleasedShort_realKeySameCycle) {
+  cycle({D(tm1)});
+  verify({ED(Key_E)});
+  cycle({U(tm1), D(kn1)});
+  verify({Consumed, ED(Key_C), EH(Key_E), ReportSent, EU(Key_E)});
+  verify_state(State::IDLE, State::IDLE);
+}
+
+TEST_F(TapModTest, pressedIdle_realKeyPressed_statePreQueue) {
+  cycle({D(tm1)});
+  cycle({H(tm1), D(kn1)});
+  verify({ED(Key_E), ReportSent, EH(Key_E), ED(Key_C)});
+  verify_state(State::PRESSED_PRE_QUEUE, State::IDLE);
+}
+
+TEST_F(TapModTest, preQueue_keyHeldLong_statePressedReal) {
+  cycle({D(tm1)});
+  cycle({H(tm1), D(kn1)});
+  verify({ED(Key_E), ReportSent, EH(Key_E), ED(Key_C)});
+  cycle({H(tm1), H(kn1)});
+  verify({EH(Key_E), EH(Key_C)});
+  inc_millis(200);
+  cycle({H(tm1), H(kn1)});
+  verify({EH(Key_E), EH(Key_C)});
+  verify_state(State::PRESSED_REAL, State::IDLE);
+}
+
+TEST_F(TapModTest, preQueue_realKeyReleased_statePreQueue) {
+  cycle({D(tm1)});
+  cycle({H(tm1), D(kn1)});
+  verify({ED(Key_E), ReportSent, EH(Key_E), ED(Key_C)});
+  cycle({H(tm1), U(kn1)});
+  verify({EH(Key_E), EU(Key_C)});
+  verify_state(State::PRESSED_PRE_QUEUE, State::IDLE);
+}
+
+TEST_F(TapModTest, preQueue_tmKeyReleasedShort_stateIdle) {
+  cycle({D(tm1)});
+  cycle({H(tm1), D(kn1)});
+  verify({ED(Key_E), ReportSent, EH(Key_E), ED(Key_C)});
+  cycle({U(tm1), H(kn1)});
+  verify({EU(Key_E), EH(Key_C)});
+  verify_state(State::IDLE, State::IDLE);
+}
+
 }

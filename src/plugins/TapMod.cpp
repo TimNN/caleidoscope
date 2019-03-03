@@ -12,10 +12,10 @@ TapMod::QueueItem TapMod::queue[QUEUE_MAX] = { 0 };
 size_t TapMod::queue_len = 0;
 size_t TapMod::queue_head = 0;
 bool TapMod::real_key_down_this_cycle = false;
-uint8_t TapMod::listening = 0;
-uint8_t TapMod::waiting = 0;
-uint8_t TapMod::injecting = 0;
-uint8_t TapMod::queuing_entries = 0;
+bool TapMod::listening = false;
+bool TapMod::waiting = false;
+bool TapMod::injecting = false;
+uint8_t TapMod::queuing = 0;
 
 void TapMod::setActual(size_t idx, Key actual) {
   if (idx < ENTRY_CNT) {
@@ -26,11 +26,11 @@ void TapMod::setActual(size_t idx, Key actual) {
 EventHandlerResult TapMod::beforeEachCycle() {
   real_key_down_this_cycle = false;
 
-  if (waiting == 0) {
+  if (!waiting) {
     return EventHandlerResult::OK;
   }
 
-  waiting = 0;
+  waiting = false;
 
   ts_millis_t ms = millis();
 
@@ -39,15 +39,16 @@ EventHandlerResult TapMod::beforeEachCycle() {
 
     switch (entry.state) {
       case State::PRESSED_IDLE:
+      case State::PRESSED_PRE_QUEUE:
         if (ms - entry.pressed_ts <= TAP_TIME_MS) {
-          waiting |= 1U << entry_idx;
+          waiting = true;
         } else {
           entry.state = State::PRESSED_REAL;
         }
         break;
       case State::PRESSED_DELAYED:
         if (ms - entry.pressed_ts <= ACTIVE_TIME_MAX_MS) {
-          waiting |= 1U << entry_idx;
+          waiting = true;
         } else {
           entry.state = State::RELEASE_THIS_CYCLE;
         }
@@ -60,7 +61,7 @@ EventHandlerResult TapMod::beforeEachCycle() {
 }
 
 EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t col, uint8_t keyState) {
-  if (queuing_entries == 0) {
+  if (queuing == 0) {
     if (isTapModKey(mappedKey)) {
       size_t entry_idx = mappedKey.raw - Key_TapMod01.raw;
       Entry& entry = entries[entry_idx];
@@ -69,8 +70,8 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
         switch (entry.state) {
           case State::IDLE:
             entry.state = State::PRESSED_IDLE;
-            listening |= 1u << entry_idx;
-            waiting |= 1u << entry_idx;
+            listening = true;
+            waiting = true;
 
             entry.pressed_ts = millis();
             mappedKey = entry.actual_key;
@@ -85,8 +86,11 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
           case State::PRESSED_IDLE:
             // Time-based state transitions are handled earlier.
             entry.state = State::PRESSED_DELAYED;
-            injecting |= 1u << entry_idx;
+            injecting = true;
             return EventHandlerResult::EVENT_CONSUMED;
+          case State::PRESSED_PRE_QUEUE:
+            // Time-based state transitions are handled earlier, so this is the same as
+            // PRESSED_REAL.
           case State::PRESSED_REAL:
             entry.state = State::IDLE;
             mappedKey = entry.actual_key;
@@ -99,6 +103,7 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
       if (keyWasPressed(keyState) && keyIsPressed(keyState)) {
         switch (entry.state) {
           case State::PRESSED_IDLE:
+          case State::PRESSED_PRE_QUEUE:
           case State::PRESSED_REAL:
             mappedKey = entry.actual_key;
             return EventHandlerResult::OK;
@@ -110,7 +115,7 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
       return EventHandlerResult::ERROR;
     }
 
-    if (keyToggledOn(keyState) && !shouldSkipKey(mappedKey)) {
+    if (listening && keyToggledOn(keyState) && !shouldSkipKey(mappedKey)) {
       real_key_down_this_cycle = true;
     }
     return EventHandlerResult::OK;
@@ -120,8 +125,8 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
 }
 
 EventHandlerResult TapMod::beforeReportingState() {
-  if (injecting != 0) {
-    injecting = 0;
+  if (injecting) {
+    injecting = false;
 
     for (size_t entry_idx = 0; entry_idx < ENTRY_CNT; entry_idx++) {
       Entry& entry = entries[entry_idx];
@@ -129,7 +134,7 @@ EventHandlerResult TapMod::beforeReportingState() {
       switch (entry.state) {
         case State::PRESSED_DELAYED:
           handleKeyswitchEvent(entry.actual_key, entry.src_row, entry.src_col, IS_PRESSED | WAS_PRESSED);
-          injecting |= 1u << entry_idx;
+          injecting = true;
           break;
         case State::RELEASE_THIS_CYCLE:
           handleKeyswitchEvent(entry.actual_key, entry.src_row, entry.src_col, WAS_PRESSED);
@@ -141,14 +146,17 @@ EventHandlerResult TapMod::beforeReportingState() {
     }
   }
 
-  if (listening != 0 && real_key_down_this_cycle) {
-    listening = 0;
+  if (listening && real_key_down_this_cycle) {
+    listening = false;
 
     for (size_t entry_idx = 0; entry_idx < ENTRY_CNT; entry_idx++) {
       Entry& entry = entries[entry_idx];
 
       switch (entry.state) {
         case State::PRESSED_IDLE:
+          entry.state = State::PRESSED_PRE_QUEUE;
+          break;
+        case State::PRESSED_PRE_QUEUE:
           return EventHandlerResult::ERROR;
         case State::PRESSED_DELAYED:
           hid::sendKeyboardReport();
@@ -200,7 +208,7 @@ void TapMod::reset() {
   listening = 0;
   waiting = 0;
   injecting = 0;
-  queuing_entries = 0;
+  queuing = 0;
 }
 
 }
