@@ -32,7 +32,7 @@ EventHandlerResult TapMod::beforeEachCycle() {
 
   waiting = false;
 
-  ts_millis_t ms = millis();
+  ts_millis_t ms = Kaleidoscope_::millisAtCycleStart();
 
   for (size_t entry_idx = 0; entry_idx < ENTRY_CNT; entry_idx++) {
     Entry& entry = entries[entry_idx];
@@ -73,7 +73,7 @@ EventHandlerResult TapMod::onKeyswitchEvent(Key &mappedKey, uint8_t row, uint8_t
             listening = true;
             waiting = true;
 
-            entry.pressed_ts = millis();
+            entry.pressed_ts = Kaleidoscope_::millisAtCycleStart();
             mappedKey = entry.actual_key;
             return EventHandlerResult::OK;
           default:

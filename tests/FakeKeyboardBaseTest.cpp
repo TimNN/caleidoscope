@@ -1,3 +1,8 @@
+#include <kaleidoscope/Kaleidoscope.h>
+// Kaleidoscope.h includes Arduino.h, which provides some annoying #defines
+#undef abs
+#undef round
+
 #include "FakeKeyboardBaseTest.h"
 
 ts_millis_t FakeKeyboardBaseTest::current_millis = FakeKeyboardBaseTest::INITIAL_MILLIS;
@@ -38,6 +43,7 @@ void FakeKeyboardBaseTest::cycle(std::initializer_list<FakeKeyEvent> events, ts_
   ts_millis_t inc = total_millis / 4;
 
   current_millis += inc;
+  kaleidoscope::Kaleidoscope_::setMillisAtCycleStart(current_millis);
   before_cycle_internal();
   current_millis += inc;
   for (auto ev : events) { handle_keyswitch_internal(ev.key, ev.row, ev.col, ev.keyState); }
@@ -120,6 +126,12 @@ extern "C" {
 
 void handleKeyswitchEvent(Key mappedKey, uint8_t row, uint8_t col, uint8_t keyState) {
   FakeKeyboardBaseTest::handle_keyswitch_internal(mappedKey, row, col, keyState);
+}
+
+namespace kaleidoscope {
+
+uint32_t Kaleidoscope_::millis_at_cycle_start_ = 0;
+
 }
 
 namespace kaleidoscope::hid {
