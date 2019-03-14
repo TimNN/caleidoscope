@@ -153,6 +153,20 @@ namespace kaleidoscope {
 
 uint32_t Kaleidoscope_::millis_at_cycle_start_ = 0;
 
+EventHandlerResult Hooks::beforeEachCycle() {
+  FakeKeyboardBaseTest::before_cycle_internal();
+  return EventHandlerResult::OK;
+}
+
+EventHandlerResult Hooks::beforeReportingState() {
+  FakeKeyboardBaseTest::before_reporting_internal();
+  return EventHandlerResult::OK;
+}
+
+EventHandlerResult Hooks::afterEachCycle() {
+  return EventHandlerResult::OK;
+}
+
 }
 
 namespace kaleidoscope::hid {
@@ -160,6 +174,8 @@ namespace kaleidoscope::hid {
 void sendKeyboardReport() {
   FakeKeyboardBaseTest::send_report_internal();
 }
+
+void releaseAllKeys() {}
 
 }
 

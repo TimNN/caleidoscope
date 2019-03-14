@@ -51,6 +51,7 @@ class IQueueTest : public FakeKeyboardBaseTest {
     static constexpr PosKey kA = PosKey { Key_A, 1, 1 };
     static constexpr PosKey kB = PosKey { Key_B, 1, 2 };
     static constexpr PosKey kC = PosKey { Key_C, 1, 3 };
+    static constexpr PosKey kD = PosKey { Key_D, 1, 4 };
     static constexpr PosKey kStop = PosKey { Key_Z, 2, 1 };
 
     static void verify_state(State s) {
@@ -117,6 +118,31 @@ TEST_F(IQueueTest, recordStuff) {
       { .pos_idx = kA.pos(), .is_last_update = false, .key_state = WAS_PRESSED },
       { .pos_idx = kB.pos(), .is_last_update = false, .key_state = IS_PRESSED },
       { .pos_idx = kStop.pos(), .is_last_update = true, .key_state = IS_PRESSED }});
+}
+
+TEST_F(IQueueTest, replayStuff) {
+  should_start_queuing = true;
+  cycle({U(kA)}); // Need a dummy event to trigger queuing.
+  verify({EU(Key_A)});
+  verify_state(State::PREPARING);
+  // Start with one of each. [=> all should be recorded]
+  queue_scan({D(kA), U(kB), H(kC)});
+  // Hold A & C. [=> implicit update]
+  queue_scan({H(kA), H(kC)});
+  // Hold A & C. [=> no update]
+  queue_scan({H(kA), H(kC)});
+  // Release A & press B. [=> explicit update for A and B (and Z)]
+  queue_scan({U(kA), D(kB), H(kC), D(kStop)});
+  cycle({D(kD)});
+  verify({Consumed, Consumed, Consumed,
+          Consumed, Consumed,
+          Consumed, Consumed,
+          Consumed, Consumed, Consumed, Consumed,
+          ED(kA.noKey()), EU(kB), EH(kC), ReportSent,
+          EH(kA.noKey()), EH(kC), ReportSent,
+          EU(kA.noKey()), ED(kB.noKey()), EH(kC), ED(kStop.noKey()), ReportSent,
+          ED(Key_D)});
+  verify_state(State::IDLE);
 }
 
 }

@@ -50,6 +50,10 @@ struct PosKey {
   uint8_t pos() const {
     return kaleidoscope::addr::addr(row, col);
   }
+
+  PosKey noKey() const {
+    return PosKey { Key_NoKey, row, col };
+  }
 };
 
 struct FakeKeyEventResultExpectation {
@@ -100,6 +104,13 @@ class FakeKeyboardBaseTest : public ::testing::Test {
       };
     }
 
+    /// Expect Down
+    static FakeKeyEventResultExpectation ED(PosKey key) {
+      return FakeKeyEventResultExpectation {
+        EventHandlerResult::OK, key.key, std::nullopt, IS_PRESSED, std::make_pair(key.row, key.col), false
+      };
+    }
+
     /// Expect Hold
     static FakeKeyEventResultExpectation EH(Key key) {
       return FakeKeyEventResultExpectation {
@@ -107,10 +118,24 @@ class FakeKeyboardBaseTest : public ::testing::Test {
       };
     }
 
+    /// Expect Hold
+    static FakeKeyEventResultExpectation EH(PosKey key) {
+      return FakeKeyEventResultExpectation {
+        EventHandlerResult::OK, key.key, std::nullopt, IS_PRESSED | WAS_PRESSED, std::make_pair(key.row, key.col), false
+      };
+    }
+
     /// Expect Up
     static FakeKeyEventResultExpectation EU(Key key) {
       return FakeKeyEventResultExpectation {
         EventHandlerResult::OK, key, std::nullopt, WAS_PRESSED, std::nullopt, false
+      };
+    }
+
+    /// Expect Up
+    static FakeKeyEventResultExpectation EU(PosKey key) {
+      return FakeKeyEventResultExpectation {
+        EventHandlerResult::OK, key.key, std::nullopt, WAS_PRESSED, std::make_pair(key.row, key.col), false
       };
     }
 
@@ -139,6 +164,7 @@ class FakeKeyboardBaseTest : public ::testing::Test {
     static void send_report_internal();
     static void act_on_matrix_scan_internal();
 
+    friend class kaleidoscope::Hooks;
     friend ts_millis_t millis_internal();
     friend void handleKeyswitchEvent(Key mappedKey, uint8_t row, uint8_t col, uint8_t keyState);
     friend void kaleidoscope::hid::sendKeyboardReport();

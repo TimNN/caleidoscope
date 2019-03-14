@@ -56,6 +56,16 @@ class IQueue : public Plugin {
       };
     };
 
+    union Flag {
+      uint8_t raw;
+      uint8_t record_key_state;
+      struct {
+        uint8_t replay_key_state : 7;
+        /// The default (0) needs to be "needs key lookup".
+        bool replay_no_key_override : 1;
+      };
+    };
+
   private:
     static constexpr size_t QUEUE_SIZE = 32;
 
@@ -63,7 +73,7 @@ class IQueue : public Plugin {
     static size_t queue_head;
     static size_t queue_len;
 
-    static uint8_t flags[ROWS * COLS];
+    static Flag flags[ROWS * COLS];
     static Key key_overrides[ROWS * COLS];
 
     static State state;
@@ -115,6 +125,7 @@ class IQueue : public Plugin {
 };
 
 static_assert (sizeof(IQueue::QWord) == 2, "Expected IQueue::QWord to have size 2.");
+static_assert (sizeof(IQueue::Flag) == 1, "Expected IQueue::Flag to have size 1.");
 static_assert (WAS_PRESSED == 0x01, "Expected WAS_PRESSED at bit[0].");
 static_assert (IS_PRESSED == 0x02, "Expected IS_PRESSED at bit[1].");
 static_assert (IS_PRESSED == 0x02, "Expected IS_PRESSED at bit[1].");
