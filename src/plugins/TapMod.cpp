@@ -1,7 +1,7 @@
 #include <kaleidoscope/keyswitch_state.h>
 #include <kaleidoscope/addr.h>
 #include <kaleidoscope/hid.h>
-#include <TapMod.h>
+#include "TapMod.h"
 
 using namespace kaleidoscope;
 

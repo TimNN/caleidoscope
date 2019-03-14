@@ -45,7 +45,7 @@ class TapModTest : public FakeKeyboardBaseTest {
     static constexpr PosKey tm1 = PosKey { Key_TapMod01, 1, 1 };
     static constexpr PosKey kn1 = PosKey { Key_C, 2, 1 };
 
-    static void verify_state(TapMod::State s0, TapMod::State s3) {
+    static void verify_state(State s0, State s3) {
       ASSERT_EQ(TapMod::entries[0].state, s0);
       ASSERT_EQ(TapMod::entries[3].state, s3);
     }

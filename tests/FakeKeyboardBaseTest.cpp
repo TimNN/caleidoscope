@@ -7,6 +7,7 @@
 
 ts_millis_t FakeKeyboardBaseTest::current_millis = FakeKeyboardBaseTest::INITIAL_MILLIS;
 
+std::deque<ScanQueueEntry> FakeKeyboardBaseTest::scan_event_queue = std::deque<ScanQueueEntry>();
 std::vector<FakeKeyEventResult> FakeKeyboardBaseTest::key_events = std::vector<FakeKeyEventResult>();
 
 std::vector<PluginOnKeyswitch> FakeKeyboardBaseTest::on_keyswitch_handlers = std::vector<PluginOnKeyswitch>();
@@ -36,6 +37,13 @@ void FakeKeyboardBaseTest::add_before_cycle_handler(PluginBeforeCycle handler) {
 
 ts_millis_t millis_internal() {
   return FakeKeyboardBaseTest::current_millis;
+}
+
+void FakeKeyboardBaseTest::queue_scan(std::initializer_list<FakeKeyEvent> events, ts_millis_t millis_post_increment) {
+  scan_event_queue.push_back(ScanQueueEntry {
+    std::vector<FakeKeyEvent>(events),
+    millis_post_increment,
+  });
 }
 
 void FakeKeyboardBaseTest::cycle(std::initializer_list<FakeKeyEvent> events, ts_millis_t total_millis) {
@@ -91,6 +99,9 @@ void FakeKeyboardBaseTest::handle_keyswitch_internal(Key mappedKey, uint8_t row,
     result = handler(mappedKey, row, col, keyState);
     ASSERT_TRUE(result == EventHandlerResult::OK || result == EventHandlerResult::EVENT_CONSUMED)
         << "Invalid event handler result: " << mys(result);
+    if (result == EventHandlerResult::EVENT_CONSUMED) {
+      break;
+    }
   }
 
   key_events.push_back(FakeKeyEventResult { orig, mappedKey, result, false });
@@ -118,6 +129,16 @@ void FakeKeyboardBaseTest::send_report_internal() {
   key_events.push_back(expect);
 }
 
+void FakeKeyboardBaseTest::act_on_matrix_scan_internal() {
+  ASSERT_FALSE(scan_event_queue.empty());
+
+  for (auto ev : scan_event_queue.front().events) { handle_keyswitch_internal(ev.key, ev.row, ev.col, ev.keyState); }
+
+  current_millis += scan_event_queue.front().millis_post_increment;
+
+  scan_event_queue.pop_front();
+}
+
 extern "C" {
   ts_millis_t millis() {
     return millis_internal();
@@ -141,3 +162,13 @@ void sendKeyboardReport() {
 }
 
 }
+
+Virtual::Virtual() {}
+
+void Virtual::readMatrix() {}
+
+void Virtual::actOnMatrixScan() {
+  FakeKeyboardBaseTest::act_on_matrix_scan_internal();
+}
+
+HARDWARE_IMPLEMENTATION KeyboardHardware;

@@ -96,6 +96,7 @@ set(my_plugin_INCLUDE_DIRS
 
 # Sources for plugins not (yet) included in kaleidoscope. [CUSTOMIZE]
 set(my_plugin_SOURCES
+        src/plugins/IQueue.cpp
         src/plugins/TapMod.cpp)
 
 set(virtual_INCLUDE_DIRS
@@ -118,6 +119,7 @@ endif()
 
 function(define_test TEST_BASE_NAME)
     add_executable(${TEST_BASE_NAME} tests/main.cpp tests/FakeKeyboardBaseTest.cpp "tests/${TEST_BASE_NAME}.cpp" ${my_plugin_SOURCES})
+    target_compile_definitions(${TEST_BASE_NAME} PRIVATE CAL_TEST=1)
     target_include_directories(${TEST_BASE_NAME} PRIVATE tests ${my_plugin_INCLUDE_DIRS} ${virtual_INCLUDE_DIRS})
     target_link_libraries(${TEST_BASE_NAME} gtest_main)
     add_test(NAME ${TEST_BASE_NAME} COMMAND ${TEST_BASE_NAME})
@@ -129,4 +131,5 @@ if(CALEIDOSCOPE_HOST)
     add_subdirectory(dep/googletest EXCLUDE_FROM_ALL)
 
     define_test(TapModTest)
+    define_test(IQueueTest)
 endif()
